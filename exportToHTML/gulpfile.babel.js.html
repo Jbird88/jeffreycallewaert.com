@@ -1,0 +1,277 @@
+<html>
+<head>
+<title>gulpfile.babel.js</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.ln { color: #999999; font-weight: normal; font-style: normal; }
+.s0 { color: rgb(128,128,128); font-style: italic; }
+.s1 { color: rgb(0,0,0); }
+.s2 { color: rgb(0,128,0); font-weight: bold; }
+.s3 { color: rgb(0,0,128); font-weight: bold; }
+.s4 { color: rgb(0,0,255); }
+</style>
+</head>
+<BODY BGCOLOR="#ffffff">
+<TABLE CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<TR><TD><CENTER>
+<FONT FACE="Arial, Helvetica" COLOR="#000000">
+gulpfile.babel.js</FONT>
+</center></TD></TR></TABLE>
+<pre>
+<span class="s0">/** 
+ * 
+ *  Web Starter Kit 
+ *  Copyright 2015 Google Inc. All rights reserved. 
+ * 
+ *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); 
+ *  you may not use this file except in compliance with the License. 
+ *  You may obtain a copy of the License at 
+ * 
+ *      https://www.apache.org/licenses/LICENSE-2.0 
+ * 
+ *  Unless required by applicable law or agreed to in writing, software 
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS, 
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ *  See the License for the specific language governing permissions and 
+ *  limitations under the License 
+ * 
+ */</span><span class="s1"> 
+ 
+</span><span class="s2">'use strict'</span><span class="s1">; 
+ 
+</span><span class="s0">// This gulpfile makes use of new JavaScript features.</span><span class="s1"> 
+</span><span class="s0">// Babel handles this without us having to do anything. It just works.</span><span class="s1"> 
+</span><span class="s0">// You can read more about the new JavaScript features here:</span><span class="s1"> 
+</span><span class="s0">// https://babeljs.io/docs/learn-es2015/</span><span class="s1"> 
+ 
+</span><span class="s3">import </span><span class="s1">path from </span><span class="s2">'path'</span><span class="s1">; 
+</span><span class="s3">import </span><span class="s1">gulp from </span><span class="s2">'gulp'</span><span class="s1">; 
+</span><span class="s3">import </span><span class="s1">del from </span><span class="s2">'del'</span><span class="s1">; 
+</span><span class="s3">import </span><span class="s1">runSequence from </span><span class="s2">'run-sequence'</span><span class="s1">; 
+</span><span class="s3">import </span><span class="s1">browserSync from </span><span class="s2">'browser-sync'</span><span class="s1">; 
+</span><span class="s3">import </span><span class="s1">swPrecache from </span><span class="s2">'sw-precache'</span><span class="s1">; 
+</span><span class="s3">import </span><span class="s1">gulpLoadPlugins from </span><span class="s2">'gulp-load-plugins'</span><span class="s1">; 
+</span><span class="s3">import </span><span class="s1">{output as pagespeed} from </span><span class="s2">'psi'</span><span class="s1">; 
+</span><span class="s3">import </span><span class="s1">pkg from </span><span class="s2">'./package.json'</span><span class="s1">; 
+ 
+</span><span class="s3">const </span><span class="s1">$ = gulpLoadPlugins(); 
+</span><span class="s3">const </span><span class="s1">reload = browserSync.reload; 
+ 
+</span><span class="s0">// Lint JavaScript</span><span class="s1"> 
+gulp.task(</span><span class="s2">'lint'</span><span class="s1">, () =&gt; 
+  gulp.src(</span><span class="s2">'app/scripts/**/*.js'</span><span class="s1">) 
+    .pipe($.eslint()) 
+    .pipe($.eslint.format()) 
+    .pipe($.if(!browserSync.active, $.eslint.failOnError())) 
+); 
+ 
+</span><span class="s0">// Optimize images</span><span class="s1"> 
+gulp.task(</span><span class="s2">'images'</span><span class="s1">, () =&gt; 
+  gulp.src(</span><span class="s2">'app/images/**/*'</span><span class="s1">) 
+    .pipe($.cache($.imagemin({ 
+      progressive: </span><span class="s3">true</span><span class="s1">, 
+      interlaced: </span><span class="s3">true</span><span class="s1"> 
+    }))) 
+    .pipe(gulp.dest(</span><span class="s2">'dist/images'</span><span class="s1">)) 
+    .pipe($.size({title: </span><span class="s2">'images'</span><span class="s1">})) 
+); 
+ 
+</span><span class="s0">// Copy all files at the root level (app)</span><span class="s1"> 
+gulp.task(</span><span class="s2">'copy'</span><span class="s1">, () =&gt; 
+  gulp.src([ 
+    </span><span class="s2">'app/*'</span><span class="s1">, 
+    </span><span class="s2">'!app/*.html'</span><span class="s1">, 
+    </span><span class="s2">'node_modules/apache-server-configs/dist/.htaccess'</span><span class="s1"> 
+  ], { 
+    dot: </span><span class="s3">true</span><span class="s1"> 
+  }).pipe(gulp.dest(</span><span class="s2">'dist'</span><span class="s1">)) 
+    .pipe($.size({title: </span><span class="s2">'copy'</span><span class="s1">})) 
+); 
+ 
+</span><span class="s0">// Compile and automatically prefix stylesheets</span><span class="s1"> 
+gulp.task(</span><span class="s2">'styles'</span><span class="s1">, () =&gt; { 
+  </span><span class="s3">const </span><span class="s1">AUTOPREFIXER_BROWSERS = [ 
+    </span><span class="s2">'ie &gt;= 10'</span><span class="s1">, 
+    </span><span class="s2">'ie_mob &gt;= 10'</span><span class="s1">, 
+    </span><span class="s2">'ff &gt;= 30'</span><span class="s1">, 
+    </span><span class="s2">'chrome &gt;= 34'</span><span class="s1">, 
+    </span><span class="s2">'safari &gt;= 7'</span><span class="s1">, 
+    </span><span class="s2">'opera &gt;= 23'</span><span class="s1">, 
+    </span><span class="s2">'ios &gt;= 7'</span><span class="s1">, 
+    </span><span class="s2">'android &gt;= 4.4'</span><span class="s1">, 
+    </span><span class="s2">'bb &gt;= 10'</span><span class="s1"> 
+  ]; 
+ 
+  </span><span class="s0">// For best performance, don't add Sass partials to `gulp.src`</span><span class="s1"> 
+  </span><span class="s3">return </span><span class="s1">gulp.src([ 
+    </span><span class="s2">'app/styles/**/*.scss'</span><span class="s1">, 
+    </span><span class="s2">'app/styles/**/*.css'</span><span class="s1"> 
+  ]) 
+    .pipe($.newer(</span><span class="s2">'.tmp/styles'</span><span class="s1">)) 
+    .pipe($.sourcemaps.init()) 
+    .pipe($.sass({ 
+      precision: </span><span class="s4">10</span><span class="s1"> 
+    }).on(</span><span class="s2">'error'</span><span class="s1">, $.sass.logError)) 
+    .pipe($.autoprefixer(AUTOPREFIXER_BROWSERS)) 
+    .pipe(gulp.dest(</span><span class="s2">'.tmp/styles'</span><span class="s1">)) 
+    </span><span class="s0">// Concatenate and minify styles</span><span class="s1"> 
+    .pipe($.if(</span><span class="s2">'*.css'</span><span class="s1">, $.cssnano())) 
+    .pipe($.size({title: </span><span class="s2">'styles'</span><span class="s1">})) 
+    .pipe($.sourcemaps.write(</span><span class="s2">'./'</span><span class="s1">)) 
+    .pipe(gulp.dest(</span><span class="s2">'dist/styles'</span><span class="s1">)); 
+}); 
+ 
+</span><span class="s0">// Concatenate and minify JavaScript. Optionally transpiles ES2015 code to ES5.</span><span class="s1"> 
+</span><span class="s0">// to enable ES2015 support remove the line `&quot;only&quot;: &quot;gulpfile.babel.js&quot;,` in the</span><span class="s1"> 
+</span><span class="s0">// `.babelrc` file.</span><span class="s1"> 
+gulp.task(</span><span class="s2">'scripts'</span><span class="s1">, () =&gt; 
+    gulp.src([ 
+      </span><span class="s0">// Note: Since we are not using useref in the scripts build pipeline,</span><span class="s1"> 
+      </span><span class="s0">//       you need to explicitly list your scripts here in the right order</span><span class="s1"> 
+      </span><span class="s0">//       to be correctly concatenated</span><span class="s1"> 
+      </span><span class="s2">'./app/scripts/main.js'</span><span class="s1"> 
+      </span><span class="s0">// Other scripts</span><span class="s1"> 
+    ]) 
+      .pipe($.newer(</span><span class="s2">'.tmp/scripts'</span><span class="s1">)) 
+      .pipe($.sourcemaps.init()) 
+      .pipe($.babel()) 
+      .pipe($.sourcemaps.write()) 
+      .pipe(gulp.dest(</span><span class="s2">'.tmp/scripts'</span><span class="s1">)) 
+      .pipe($.concat(</span><span class="s2">'main.min.js'</span><span class="s1">)) 
+      .pipe($.uglify({preserveComments: </span><span class="s2">'some'</span><span class="s1">})) 
+      </span><span class="s0">// Output files</span><span class="s1"> 
+      .pipe($.size({title: </span><span class="s2">'scripts'</span><span class="s1">})) 
+      .pipe($.sourcemaps.write(</span><span class="s2">'.'</span><span class="s1">)) 
+      .pipe(gulp.dest(</span><span class="s2">'dist/scripts'</span><span class="s1">)) 
+); 
+ 
+</span><span class="s0">// Scan your HTML for assets &amp; optimize them</span><span class="s1"> 
+gulp.task(</span><span class="s2">'html'</span><span class="s1">, () =&gt; { 
+  </span><span class="s3">return </span><span class="s1">gulp.src(</span><span class="s2">'app/**/*.html'</span><span class="s1">) 
+    .pipe($.useref({ 
+      searchPath: </span><span class="s2">'{.tmp,app}'</span><span class="s1">, 
+      noAssets: </span><span class="s3">true</span><span class="s1"> 
+    })) 
+ 
+    </span><span class="s0">// Minify any HTML</span><span class="s1"> 
+    .pipe($.if(</span><span class="s2">'*.html'</span><span class="s1">, $.htmlmin({ 
+      removeComments: </span><span class="s3">true</span><span class="s1">, 
+      collapseWhitespace: </span><span class="s3">true</span><span class="s1">, 
+      collapseBooleanAttributes: </span><span class="s3">true</span><span class="s1">, 
+      removeAttributeQuotes: </span><span class="s3">true</span><span class="s1">, 
+      removeRedundantAttributes: </span><span class="s3">true</span><span class="s1">, 
+      removeEmptyAttributes: </span><span class="s3">true</span><span class="s1">, 
+      removeScriptTypeAttributes: </span><span class="s3">true</span><span class="s1">, 
+      removeStyleLinkTypeAttributes: </span><span class="s3">true</span><span class="s1">, 
+      removeOptionalTags: </span><span class="s3">true</span><span class="s1"> 
+    }))) 
+    </span><span class="s0">// Output files</span><span class="s1"> 
+    .pipe($.if(</span><span class="s2">'*.html'</span><span class="s1">, $.size({title: </span><span class="s2">'html'</span><span class="s1">, showFiles: </span><span class="s3">true</span><span class="s1">}))) 
+    .pipe(gulp.dest(</span><span class="s2">'dist'</span><span class="s1">)); 
+}); 
+ 
+</span><span class="s0">// Clean output directory</span><span class="s1"> 
+gulp.task(</span><span class="s2">'clean'</span><span class="s1">, () =&gt; del([</span><span class="s2">'.tmp'</span><span class="s1">, </span><span class="s2">'dist/*'</span><span class="s1">, </span><span class="s2">'!dist/.git'</span><span class="s1">], {dot: </span><span class="s3">true</span><span class="s1">})); 
+ 
+</span><span class="s0">// Watch files for changes &amp; reload</span><span class="s1"> 
+gulp.task(</span><span class="s2">'serve'</span><span class="s1">, [</span><span class="s2">'scripts'</span><span class="s1">, </span><span class="s2">'styles'</span><span class="s1">], () =&gt; { 
+  browserSync({ 
+    notify: </span><span class="s3">false</span><span class="s1">, 
+    </span><span class="s0">// Customize the Browsersync console logging prefix</span><span class="s1"> 
+    logPrefix: </span><span class="s2">'WSK'</span><span class="s1">, 
+    </span><span class="s0">// Allow scroll syncing across breakpoints</span><span class="s1"> 
+    scrollElementMapping: [</span><span class="s2">'main'</span><span class="s1">, </span><span class="s2">'.mdl-layout'</span><span class="s1">], 
+    </span><span class="s0">// Run as an https by uncommenting 'https: true'</span><span class="s1"> 
+    </span><span class="s0">// Note: this uses an unsigned certificate which on first access</span><span class="s1"> 
+    </span><span class="s0">//       will present a certificate warning in the browser.</span><span class="s1"> 
+    </span><span class="s0">// https: true,</span><span class="s1"> 
+    server: [</span><span class="s2">'.tmp'</span><span class="s1">, </span><span class="s2">'app'</span><span class="s1">], 
+    port: </span><span class="s4">3000</span><span class="s1"> 
+  }); 
+ 
+  gulp.watch([</span><span class="s2">'app/**/*.html'</span><span class="s1">], reload); 
+  gulp.watch([</span><span class="s2">'app/styles/**/*.{scss,css}'</span><span class="s1">], [</span><span class="s2">'styles'</span><span class="s1">, reload]); 
+  gulp.watch([</span><span class="s2">'app/scripts/**/*.js'</span><span class="s1">], [</span><span class="s2">'lint'</span><span class="s1">, </span><span class="s2">'scripts'</span><span class="s1">, reload]); 
+  gulp.watch([</span><span class="s2">'app/images/**/*'</span><span class="s1">], reload); 
+}); 
+ 
+</span><span class="s0">// Build and serve the output from the dist build</span><span class="s1"> 
+gulp.task(</span><span class="s2">'serve:dist'</span><span class="s1">, [</span><span class="s2">'default'</span><span class="s1">], () =&gt; 
+  browserSync({ 
+    notify: </span><span class="s3">false</span><span class="s1">, 
+    logPrefix: </span><span class="s2">'WSK'</span><span class="s1">, 
+    </span><span class="s0">// Allow scroll syncing across breakpoints</span><span class="s1"> 
+    scrollElementMapping: [</span><span class="s2">'main'</span><span class="s1">, </span><span class="s2">'.mdl-layout'</span><span class="s1">], 
+    </span><span class="s0">// Run as an https by uncommenting 'https: true'</span><span class="s1"> 
+    </span><span class="s0">// Note: this uses an unsigned certificate which on first access</span><span class="s1"> 
+    </span><span class="s0">//       will present a certificate warning in the browser.</span><span class="s1"> 
+    </span><span class="s0">// https: true,</span><span class="s1"> 
+    server: </span><span class="s2">'dist'</span><span class="s1">, 
+    port: </span><span class="s4">3001</span><span class="s1"> 
+  }) 
+); 
+ 
+</span><span class="s0">// Build production files, the default task</span><span class="s1"> 
+gulp.task(</span><span class="s2">'default'</span><span class="s1">, [</span><span class="s2">'clean'</span><span class="s1">], cb =&gt; 
+  runSequence( 
+    </span><span class="s2">'styles'</span><span class="s1">, 
+    [</span><span class="s2">'lint'</span><span class="s1">, </span><span class="s2">'html'</span><span class="s1">, </span><span class="s2">'scripts'</span><span class="s1">, </span><span class="s2">'images'</span><span class="s1">, </span><span class="s2">'copy'</span><span class="s1">], 
+    </span><span class="s2">'generate-service-worker'</span><span class="s1">, 
+    cb 
+  ) 
+); 
+ 
+</span><span class="s0">// Run PageSpeed Insights</span><span class="s1"> 
+gulp.task(</span><span class="s2">'pagespeed'</span><span class="s1">, cb =&gt; 
+  </span><span class="s0">// Update the below URL to the public URL of your site</span><span class="s1"> 
+  pagespeed(</span><span class="s2">'example.com'</span><span class="s1">, { 
+    strategy: </span><span class="s2">'mobile'</span><span class="s1"> 
+    </span><span class="s0">// By default we use the PageSpeed Insights free (no API key) tier.</span><span class="s1"> 
+    </span><span class="s0">// Use a Google Developer API key if you have one: http://goo.gl/RkN0vE</span><span class="s1"> 
+    </span><span class="s0">// key: 'YOUR_API_KEY'</span><span class="s1"> 
+  }, cb) 
+); 
+ 
+</span><span class="s0">// Copy over the scripts that are used in importScripts as part of the generate-service-worker task.</span><span class="s1"> 
+gulp.task(</span><span class="s2">'copy-sw-scripts'</span><span class="s1">, () =&gt; { 
+  </span><span class="s3">return </span><span class="s1">gulp.src([</span><span class="s2">'node_modules/sw-toolbox/sw-toolbox.js'</span><span class="s1">, </span><span class="s2">'app/scripts/sw/runtime-caching.js'</span><span class="s1">]) 
+    .pipe(gulp.dest(</span><span class="s2">'dist/scripts/sw'</span><span class="s1">)); 
+}); 
+ 
+</span><span class="s0">// See http://www.html5rocks.com/en/tutorials/service-worker/introduction/ for</span><span class="s1"> 
+</span><span class="s0">// an in-depth explanation of what service workers are and why you should care.</span><span class="s1"> 
+</span><span class="s0">// Generate a service worker file that will provide offline functionality for</span><span class="s1"> 
+</span><span class="s0">// local resources. This should only be done for the 'dist' directory, to allow</span><span class="s1"> 
+</span><span class="s0">// live reload to work as expected when serving from the 'app' directory.</span><span class="s1"> 
+gulp.task(</span><span class="s2">'generate-service-worker'</span><span class="s1">, [</span><span class="s2">'copy-sw-scripts'</span><span class="s1">], () =&gt; { 
+  </span><span class="s3">const </span><span class="s1">rootDir = </span><span class="s2">'dist'</span><span class="s1">; 
+  </span><span class="s3">const </span><span class="s1">filepath = path.join(rootDir, </span><span class="s2">'service-worker.js'</span><span class="s1">); 
+ 
+  </span><span class="s3">return </span><span class="s1">swPrecache.write(filepath, { 
+    </span><span class="s0">// Used to avoid cache conflicts when serving on localhost.</span><span class="s1"> 
+    cacheId: pkg.name || </span><span class="s2">'web-starter-kit'</span><span class="s1">, 
+    </span><span class="s0">// sw-toolbox.js needs to be listed first. It sets up methods used in runtime-caching.js.</span><span class="s1"> 
+    importScripts: [ 
+      </span><span class="s2">'scripts/sw/sw-toolbox.js'</span><span class="s1">, 
+      </span><span class="s2">'scripts/sw/runtime-caching.js'</span><span class="s1"> 
+    ], 
+    staticFileGlobs: [ 
+      </span><span class="s0">// Add/remove glob patterns to match your directory setup.</span><span class="s1"> 
+      </span><span class="s2">`</span><span class="s1">${rootDir}</span><span class="s2">/images/**/*`</span><span class="s1">, 
+      </span><span class="s2">`</span><span class="s1">${rootDir}</span><span class="s2">/scripts/**/*.js`</span><span class="s1">, 
+      </span><span class="s2">`</span><span class="s1">${rootDir}</span><span class="s2">/styles/**/*.css`</span><span class="s1">, 
+      </span><span class="s2">`</span><span class="s1">${rootDir}</span><span class="s2">/*.{html,json}`</span><span class="s1"> 
+    ], 
+    </span><span class="s0">// Translates a static file path to the relative URL that it's served from.</span><span class="s1"> 
+    </span><span class="s0">// This is '/' rather than path.sep because the paths returned from</span><span class="s1"> 
+    </span><span class="s0">// glob always use '/'.</span><span class="s1"> 
+    stripPrefix: rootDir + </span><span class="s2">'/'</span><span class="s1"> 
+  }); 
+}); 
+ 
+</span><span class="s0">// Load custom tasks from the `tasks` directory</span><span class="s1"> 
+</span><span class="s0">// Run: `npm install --save-dev require-dir` from the command-line</span><span class="s1"> 
+</span><span class="s0">// try { require('require-dir')('tasks'); } catch (err) { console.error(err); }</span><span class="s1"> 
+</span></pre>
+</body>
+</html>
